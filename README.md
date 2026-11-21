@@ -1,39 +1,52 @@
-# My RAG From Scratch
+# My RAG with Typesense
 
-A hands-on project to understand and implement Retrieval-Augmented Generation (RAG) from scratch using Python.
+A hands-on project to understand and implement Retrieval-Augmented Generation (RAG) using Python, LangChain, and Typesense.
 
-The project is currently centered on one Jupyter notebook. It demonstrates document loading, text splitting, embeddings, ChromaDB storage and retrieval, and optional answer generation with Groq. The PDF is loaded as a separate example; the current vector retrieval flow indexes the text files.
+The project explores how to connect Typesense with a RAG pipeline, perform document ingestion, generate embeddings, store and retrieve information, and use semantic search to find relevant content.
 
 ## What is RAG?
 
 Retrieval-Augmented Generation (RAG) retrieves relevant information from a document collection and provides it to a language model as context for answering a question. This lets a model use information from documents that was not part of its training data.
+
+## What is Typesense?
+
+Typesense is an open-source search engine that supports fast, typo-tolerant search, filtering, faceting, and vector search.
+
+In a RAG application, Typesense can be used to store document chunks and their vector embeddings, allowing the system to retrieve relevant information efficiently when a user submits a query.
 
 ## Technologies
 
 - Python 3.12+
 - UV for dependency and virtual-environment management
 - Jupyter Notebook and VS Code
-- LangChain document loaders, document types, and text splitters
-- PyMuPDF for loading PDF files
-- Sentence Transformers for embeddings
-- ChromaDB for persistent vector storage and retrieval
-- Groq via LangChain for the optional LLM response examples
+- Typesense for search and vector storage
+- Typesense Python Client
+- LangChain for document loading and vector store integration
+- LangChain Text Splitters for splitting documents into chunks
+- Hugging Face Sentence Transformers for generating embeddings
+- Python-dotenv for environment variable management
+- Groq API configuration for the LLM integration
 
-## Project structure
+## Project Structure
 
 ```text
-my-rag-from-scratch/
+my-rag-with-typesense/
+│
 ├── data/
-│   ├── pdf_files/
-│   │   └── sample.pdf
+│   ├── json_files/
+│   │   └── books.jsonl
+│   │
 │   └── text_files/
-│       ├── machine_learning.txt
-│       └── python_intro.txt
+│       └── test.txt
+│
 ├── notebook/
-│   └── document.ipynb
+│   ├── document.ipynb
+│   └── typesense.ipynb
+│
 ├── src/
 │   └── my_rag_from_scratch/
 │       └── __init__.py
+│
 ├── .env.example
 ├── .gitignore
 ├── .python-version
@@ -43,7 +56,7 @@ my-rag-from-scratch/
 └── uv.lock
 ```
 
-The notebook creates `data/vector_store/` when it runs. The vector database and the local `.venv/` are generated files and are not tracked by Git.
+The repository contains two Jupyter notebooks. This README focuses on `notebook/typesense.ipynb`, which explores Typesense integration and RAG.
 
 ## Prerequisites
 
@@ -51,18 +64,20 @@ The notebook creates `data/vector_store/` when it runs. The vector database and 
 - Git
 - UV
 - Visual Studio Code
+- A Typesense Cloud account with a running cluster
+- A Groq API key
 
-The notebook downloads the `all-MiniLM-L6-v2` embedding model the first time it is used, so an internet connection is needed. The final Groq-backed cells additionally require a Groq API key and network access to the Groq service. The document-loading, embedding, and retrieval examples do not require that API key.
+The notebook downloads the Hugging Face embedding model the first time it is used, so an internet connection is required.
 
 ## Install UV on Windows
 
-In PowerShell, install UV with WinGet:
+In PowerShell, install UV using WinGet:
 
 ```powershell
 winget install --id=astral-sh.uv -e
 ```
 
-Open a new PowerShell terminal, then verify the installation:
+Open a new PowerShell terminal and verify the installation:
 
 ```powershell
 uv --version
@@ -70,77 +85,152 @@ uv --version
 
 For other installation options and operating systems, see the [official UV installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
-## Clone the repository and install dependencies
+## Clone the Repository and Install Dependencies
 
 In PowerShell:
 
 ```powershell
-git clone https://github.com/Cyber-Infernox/my-rag-from-scratch.git
-Set-Location my-rag-from-scratch
+git clone https://github.com/Cyber-Infernox/my-rag-with-typesense.git
+
+Set-Location my-rag-with-typesense
+
 uv sync
 ```
 
-`uv sync` creates `.venv/` if needed and installs the dependencies from `pyproject.toml` using the committed `uv.lock`. These files are the dependency source of truth; do not run `uv init` in this existing project.
+`uv sync` creates the virtual environment (`.venv/`) if needed and installs the dependencies from `pyproject.toml` using the committed `uv.lock`.
 
-## Open in VS Code and configure Python
+The Typesense notebook also imports `HuggingFaceEmbeddings` from `langchain_huggingface`. If this dependency is not yet included in your project, install it using:
 
-Open the repository from its root:
+```powershell
+uv add langchain-huggingface
+```
+
+## Open in VS Code and Configure Python
+
+Open the repository from its root directory:
 
 ```powershell
 code .
 ```
 
-If the `code` command is unavailable, open VS Code and use **File > Open Folder** to select the cloned repository.
+If the `code` command is unavailable, open VS Code and use File > Open Folder to select the cloned repository.
 
-Install the Microsoft **Python** and **Jupyter** extensions. You can also install them from PowerShell:
+Install the Microsoft Python and Jupyter extensions:
 
 ```powershell
 code --install-extension ms-python.python
+
 code --install-extension ms-toolsai.jupyter
 ```
 
 Select the project interpreter:
 
 1. Press `Ctrl+Shift+P`.
-2. Run **Python: Select Interpreter**.
+2. Run `Python: Select Interpreter`.
 3. Choose `.venv\Scripts\python.exe`.
 
-Open `notebook/document.ipynb`. Use **Select Kernel** in the notebook toolbar and choose the Python environment that points to the same `.venv`.
+Open `notebook/typesense.ipynb`. Use Select Kernel in the notebook toolbar and choose the Python environment that points to the same `.venv`.
 
-## Notebook execution order
+## Environment Variables and API Keys
 
-There is one notebook, `notebook/document.ipynb`; there are no other notebooks to run first. Restart its kernel and run all cells from top to bottom, in the order displayed. The notebook proceeds through:
+The project uses environment variables to securely manage API keys and Typesense connection details.
 
-1. Creating a LangChain `Document` example.
-2. Writing the sample text files under `data/text_files/`.
-3. Loading a text file and then the text-file directory.
-4. Loading the sample PDF into a separate variable.
-5. Defining the text splitter.
-6. Initializing the embedding model and ChromaDB vector store.
-7. Splitting and embedding the text documents and adding them to ChromaDB.
-8. Defining and using the retriever.
-9. Configuring Groq and running the simple and advanced RAG examples.
+Create a local `.env` file in the repository root using `.env.example` as a template.
 
-The notebook uses paths such as `../data/text_files`, so its working directory must be the repository's `notebook/` directory. If a data file is reported missing, check the notebook's working directory before changing the paths.
+Add the following variables to your `.env` file:
 
-To run the Groq examples, create a local `.env` file from the template if one does not already exist:
+```env
+GROQ_API_KEY=your_groq_api_key_here
 
-```powershell
-if (-not (Test-Path .env)) {
-    Copy-Item .env.example .env
-}
+TYPESENSE_HOST=your_typesense_host
+TYPESENSE_PORT=443
+TYPESENSE_PROTOCOL=https
+TYPESENSE_API_KEY=your_typesense_api_key
+TYPESENSE_COLLECTION_NAME=rag-docs
 ```
 
-Replace the placeholder `GROQ_API_KEY` value in `.env`, or keep the key already present there. Do not overwrite an existing `.env`, commit it, or paste a real key into a notebook cell or notebook output. The `.env` file is ignored by Git.
+Replace the placeholder values with your actual credentials.
+
+- `GROQ_API_KEY`: Your Groq API key.
+- `TYPESENSE_HOST`: Your Typesense Cloud cluster hostname.
+- `TYPESENSE_PORT`: The Typesense connection port (443 for Typesense Cloud).
+- `TYPESENSE_PROTOCOL`: The connection protocol (https for Typesense Cloud).
+- `TYPESENSE_API_KEY`: Your Typesense API key.
+- `TYPESENSE_COLLECTION_NAME`: The collection used for storing document chunks in the RAG example. The default is `rag-docs`.
+
+**Important:** Never commit your `.env` file or expose actual API keys in your notebooks, code, or GitHub repository. The `.env` file is ignored by Git.
+
+## Notebook Execution Order
+
+The main focus of this project is `notebook/typesense.ipynb`.
+
+Restart the notebook kernel and execute the cells from top to bottom, in the order displayed.
+
+The notebook covers the following:
+
+### 1. Connecting to Typesense
+
+- Importing the Typesense Python client.
+- Loading connection details from environment variables.
+- Creating a Typesense client.
+- Establishing a connection with Typesense Cloud.
+
+### 2. Creating a Collection in Typesense
+
+- Defining a collection schema named `books`.
+- Configuring fields such as title, authors, publication year, ratings count, and average rating.
+- Specifying field types and faceting options.
+- Creating the collection using the Typesense client.
+
+### 3. Importing Data into Typesense
+
+- Loading book records from `data/json_files/books.jsonl`.
+- Importing the JSONL data into the `books` collection.
+- Understanding how documents are stored in Typesense.
+
+### 4. Performing Search Operations
+
+- Creating search parameters.
+- Searching books using their titles and authors.
+- Sorting search results using ratings count.
+- Applying filters based on publication year.
+- Understanding how Typesense returns matching documents and search results.
+
+### 5. Integrating LangChain with Typesense
+
+- Importing LangChain document loaders and vector store integrations.
+- Loading text documents using `TextLoader`.
+- Splitting documents into smaller chunks using `CharacterTextSplitter`.
+- Configuring chunk size and overlap.
+- Initializing Hugging Face embeddings.
+
+### 6. Creating a RAG Vector Store
+
+- Connecting LangChain with Typesense.
+- Configuring the Typesense collection and connection parameters.
+- Generating embeddings for document chunks.
+- Storing documents and their embeddings in Typesense using `Typesense.from_documents()`.
+
+### 7. Retrieving Relevant Documents
+
+- Performing similarity search using a natural-language query.
+- Retrieving relevant document chunks from Typesense.
+- Creating a retriever using `as_retriever()`.
+- Using `retriever.invoke()` to retrieve relevant documents for a query.
+
+The notebook uses relative paths such as `../data/json_files/books.jsonl` and `../data/text_files/test.txt`. Make sure the notebook's working directory is the repository's `notebook/` directory.
+
+**Note:** The current notebook demonstrates Typesense search, vector storage, similarity search, and document retrieval. Although it checks for a Groq API key and introduces the Groq integration in its heading, the current implementation does not yet demonstrate generating a final LLM answer using Groq.
 
 ## Troubleshooting
 
-- **`uv` is not recognized:** Open a new terminal after installing UV, then check `uv --version`.
-- **A Python package cannot be imported:** From the repository root, run `uv sync`, then select `.venv\Scripts\python.exe` as both the VS Code interpreter and notebook kernel.
-- **A data file cannot be found:** Confirm the notebook's working directory is `notebook/`; its relative paths start with `../data`.
-- **The embedding model cannot load:** Check your internet connection and rerun the model-loading cell. The first run downloads the model.
-- **Groq reports a missing API key:** If `.env` does not exist, create it from `.env.example`; otherwise update the existing file. Enter a valid `GROQ_API_KEY` and restart the notebook kernel before running the Groq cells.
-- **You want a fresh vector store:** Stop the notebook kernel and remove the generated `data/vector_store/` directory before running the notebook again. It will be recreated from the notebook's current input documents.
+- **`uv` is not recognized:** Open a new terminal after installing UV and check `uv --version`.
+- **A Python package cannot be imported:** Run `uv sync` from the repository root and ensure the correct `.venv` interpreter and notebook kernel are selected. If `langchain_huggingface` is missing, run `uv add langchain-huggingface`.
+- **Typesense connection error:** Check your Typesense hostname, API key, port, and protocol in the `.env` file.
+- **Missing environment variables:** Ensure the `.env` file exists in the repository root and contains the required Typesense configuration.
+- **Collection already exists:** Typesense returns an error if you try to create a collection that already exists. Reuse the existing collection or remove it before creating it again.
+- **A data file cannot be found:** Confirm that the notebook's working directory is `notebook/`. The relative paths start with `../data`.
+- **The embedding model cannot load:** Check your internet connection and rerun the embedding initialization cell. The first run downloads the model.
 
 ## Contributing
 
@@ -148,4 +238,4 @@ Contributions and pull requests are welcome.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the MIT License.
