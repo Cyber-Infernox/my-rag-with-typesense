@@ -1,0 +1,5 @@
+Retrieval-Augmented Generation (RAG) combines information retrieval with large language models to ground answers in external data. Instead of relying solely on parameters learned during training, a RAG pipeline retrieves relevant passages from a knowledge base at query time and passes them into the LLM prompt.
+
+Typesense is an open-source search engine that supports typo tolerance, filtering, faceting, and vector search. In a RAG application, Typesense can store document chunks and vector embeddings so the system can retrieve relevant context quickly before generating a response with a model hosted on Groq.
+
+Chunking splits long documents into smaller pieces so each piece fits comfortably within embedding and context limits. Using a chunk size with a small overlap—such as 1000 characters with a 100-character overlap—helps preserve context across chunk boundaries when splitting text with CharacterTextSplitter.

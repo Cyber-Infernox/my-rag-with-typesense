@@ -18,6 +18,7 @@ dependencies = [
     "pymupdf>=2.1",
     "python-dotenv>=1.2.4",
     "sentence-transformers>=6.3.0",
+    "typesense>=2.1.1",
 ]
 
 [build-system]
